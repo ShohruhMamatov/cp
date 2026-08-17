@@ -1,4 +1,5 @@
 import os
+from typing import Annotated
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
@@ -10,7 +11,6 @@ from app.core.config import ALLOWED_CONTENT_TYPES, settings
 from app.models import Document, Project, User
 from app.schemas.document import DocumentOut
 from app.services import storage
-from typing import Annotated
 
 router = APIRouter(tags=["documents"])
 

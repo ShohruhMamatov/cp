@@ -3,13 +3,12 @@ from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException, Path, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError
+from jwt.exceptions import PyJWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import decode_token
 from app.db.session import get_session
 from app.models import Membership, Role, User
-from jwt.exceptions import PyJWTError
 
 bearer_scheme = HTTPBearer(auto_error=True)
 

@@ -25,8 +25,8 @@ def verify_password(plain: str, hashed: str) -> bool:
 def create_access_token(user_id: int, token_type: str = "access") -> str:
     now = datetime.now(timezone.utc)
     payload = {
-        "sub": str(user_id),  # jose requires a string subject
-        "typ": token_type,  # stops an invite token being replayed as a login token
+        "sub": str(user_id),
+        "typ": token_type,
         "iat": now,
         "exp": now + timedelta(minutes=settings.access_token_expire_minutes),
     }

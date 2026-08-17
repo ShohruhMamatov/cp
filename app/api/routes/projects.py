@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -6,7 +8,6 @@ from app.api.deps import CurrentUser, RequireMember, RequireOwner, SessionDep
 from app.models import Membership, Project, Role, User
 from app.schemas.project import ProjectCreate, ProjectFull, ProjectInfo, ProjectUpdate
 from app.services import storage
-from typing import Annotated
 
 router = APIRouter(tags=["projects"])
 
