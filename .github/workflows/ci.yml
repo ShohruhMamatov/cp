@@ -1,10 +1,51 @@
 name: CI
 
-on: [push]
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
-  test:
+  quality:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pm
+          POSTGRES_PASSWORD: pm
+          POSTGRES_DB: pm
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      POSTGRES_USER: pm
+      POSTGRES_PASSWORD: pm
+      POSTGRES_DB: pm
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      JWT_SECRET: ci-secret-at-least-32-bytes-long-for-hmac-sha256
+
     steps:
       - uses: actions/checkout@v4
-      - run: echo "hello from CI"
+
+      - uses: astral-sh/setup-uv@v3
+
+      - run: uv sync --frozen
+
+      - name: Create test database
+        run: PGPASSWORD=pm psql -h localhost -U pm -d pm -c "CREATE DATABASE pm_test;"
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Format check
+        run: uv run ruff format --check .
+
+      - name: Test
+        run: uv run pytest
