@@ -10,6 +10,7 @@ from app.core.config import ALLOWED_CONTENT_TYPES, settings
 from app.models import Document, Project, User
 from app.schemas.document import DocumentOut
 from app.services import storage
+from typing import Annotated
 
 router = APIRouter(tags=["documents"])
 
@@ -31,7 +32,7 @@ def _validate(upload: UploadFile) -> str:
         )
     if _file_size(upload) > settings.max_file_bytes:
         raise HTTPException(
-            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status.HTTP_413_CONTENT_TOO_LARGE,
             f"'{upload.filename}' exceeds the {settings.max_file_bytes} byte limit",
         )
     return extension
@@ -61,7 +62,7 @@ async def upload_documents(
     membership: RequireMember,
     user: CurrentUser,
     session: SessionDep,
-    files: list[UploadFile] = File(...),
+    files: Annotated[list[UploadFile], File()],
 ):
     project = await session.get(Project, project_id)
 
@@ -71,13 +72,11 @@ async def upload_documents(
     incoming = sum(_file_size(upload) for upload in files)
 
     if project.total_size_bytes + incoming > settings.max_project_bytes:
-        raise HTTPException(
-            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "Project storage limit exceeded"
-        )
+        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "Project storage limit exceeded")
 
     created: list[Document] = []
     written = 0
-    for upload, extension in zip(files, extensions):
+    for upload, extension in zip(files, extensions, strict=True):
         key = storage.build_key(project_id, extension)
         size = await storage.save_fileobj(upload.file, key)
         written += size
@@ -117,7 +116,7 @@ async def update_document(
     document_id: int,
     user: CurrentUser,
     session: SessionDep,
-    file: UploadFile = File(...),
+    file: Annotated[UploadFile, File()],
 ):
     document = await _load_document(session, user, document_id)
     extension = _validate(file)
@@ -125,9 +124,7 @@ async def update_document(
     project = await session.get(Project, document.project_id)
     old_size = document.size_bytes
     if project.total_size_bytes - old_size + _file_size(file) > settings.max_project_bytes:
-        raise HTTPException(
-            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "Project storage limit exceeded"
-        )
+        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "Project storage limit exceeded")
 
     # Write to a NEW key, then delete the old one after the commit. If the
     # commit fails, the original file is untouched and the row still points at it.

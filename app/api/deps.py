@@ -1,4 +1,5 @@
-from typing import Annotated, Any, Callable, Coroutine
+from collections.abc import Callable, Coroutine
+from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException, Path, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -8,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import decode_token
 from app.db.session import get_session
 from app.models import Membership, Role, User
+from jwt.exceptions import PyJWTError
 
 bearer_scheme = HTTPBearer(auto_error=True)
 
@@ -26,9 +28,10 @@ async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer_scheme)],
     session: SessionDep,
 ) -> User:
+
     try:
         user_id = decode_token(credentials.credentials)
-    except (JWTError, KeyError, ValueError) as exc:
+    except (PyJWTError, KeyError, ValueError) as exc:
         raise _unauthorized() from exc
 
     user = await session.get(User, user_id)
@@ -40,12 +43,8 @@ async def get_current_user(
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
-async def get_membership(
-    session: AsyncSession, user_id: int, project_id: int
-) -> Membership:
-    membership = await session.get(
-        Membership, {"user_id": user_id, "project_id": project_id}
-    )
+async def get_membership(session: AsyncSession, user_id: int, project_id: int) -> Membership:
+    membership = await session.get(Membership, {"user_id": user_id, "project_id": project_id})
     if membership is None:
         # 404, not 403: a 403 would confirm the project exists to someone
         # with no right to know that.

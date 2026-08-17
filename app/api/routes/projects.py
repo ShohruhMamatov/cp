@@ -6,6 +6,7 @@ from app.api.deps import CurrentUser, RequireMember, RequireOwner, SessionDep
 from app.models import Membership, Project, Role, User
 from app.schemas.project import ProjectCreate, ProjectFull, ProjectInfo, ProjectUpdate
 from app.services import storage
+from typing import Annotated
 
 router = APIRouter(tags=["projects"])
 
@@ -73,19 +74,15 @@ async def invite_user(
     project_id: int,
     membership: RequireOwner,
     session: SessionDep,
-    user: str = Query(..., description="login of the user to invite"),
+    user: Annotated[str, Query(description="login of the user to invite")],
 ):
     invitee = (await session.scalars(select(User).where(User.login == user))).first()
     if invitee is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
 
-    existing = await session.get(
-        Membership, {"user_id": invitee.id, "project_id": project_id}
-    )
+    existing = await session.get(Membership, {"user_id": invitee.id, "project_id": project_id})
     if existing is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, "User already has access")
 
-    session.add(
-        Membership(user_id=invitee.id, project_id=project_id, role=Role.PARTICIPANT)
-    )
+    session.add(Membership(user_id=invitee.id, project_id=project_id, role=Role.PARTICIPANT))
     await session.commit()

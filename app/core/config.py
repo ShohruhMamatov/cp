@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
 
     storage_dir: str = "./storage"
-    max_file_bytes: int = 10 * 1024 * 1024      # 10 MB per file
-    max_project_bytes: int = 50 * 1024 * 1024   # 50 MB per project
+    max_file_bytes: int = 10 * 1024 * 1024  # 10 MB per file
+    max_project_bytes: int = 50 * 1024 * 1024  # 50 MB per project
 
     @property
     def database_url(self) -> str:

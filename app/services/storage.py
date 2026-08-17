@@ -6,19 +6,22 @@ from starlette.concurrency import run_in_threadpool
 
 from app.core.config import settings
 
-BASE_DIR = settings.storage_path
+
+def _base_dir() -> Path:
+    return settings.storage_path
+
+
+def _resolve(key: str) -> Path:
+    base = _base_dir()
+    path = (base / key).resolve()
+    if not path.is_relative_to(base):
+        raise ValueError(f"key escapes storage root: {key}")
+    return path
 
 
 def build_key(project_id: int, extension: str) -> str:
     """Storage key, laid out to mirror the S3 prefix scheme we move to later."""
     return f"projects/{project_id}/documents/{uuid.uuid4().hex}{extension}"
-
-
-def _resolve(key: str) -> Path:
-    path = (BASE_DIR / key).resolve()
-    if not path.is_relative_to(BASE_DIR):
-        raise ValueError(f"key escapes storage root: {key}")
-    return path
 
 
 async def save_fileobj(fileobj, key: str) -> int:

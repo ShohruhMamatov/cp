@@ -37,9 +37,7 @@ class Membership(Base):
         Enum(Role, name="role_enum", values_callable=lambda e: [m.value for m in e]),
         default=Role.PARTICIPANT,
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    user: Mapped["User"] = relationship(back_populates="memberships")
-    project: Mapped["Project"] = relationship(back_populates="memberships")
+    user: Mapped[User] = relationship(back_populates="memberships")
+    project: Mapped[Project] = relationship(back_populates="memberships")

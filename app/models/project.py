@@ -23,20 +23,16 @@ class Project(Base):
     # Denormalized cache of SUM(documents.size_bytes). Redundant by 3NF, but it
     # saves an aggregate query on every upload. This is the normalization /
     # denormalization tradeoff phase 2 asks about.
-    total_size_bytes: Mapped[int] = mapped_column(
-        BigInteger, default=0, server_default="0"
-    )
+    total_size_bytes: Mapped[int] = mapped_column(BigInteger, default=0, server_default="0")
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    documents: Mapped[list["Document"]] = relationship(
+    documents: Mapped[list[Document]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
     )
-    memberships: Mapped[list["Membership"]] = relationship(
+    memberships: Mapped[list[Membership]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
     )

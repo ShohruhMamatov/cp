@@ -1,7 +1,10 @@
 from datetime import datetime, timedelta, timezone
 
-from jose import JWTError, jwt
 import bcrypt
+import jwt
+from jwt.exceptions import InvalidTokenError
+
+from app.core.config import settings
 
 
 def hash_password(password: str) -> str:
@@ -18,18 +21,12 @@ def verify_password(plain: str, hashed: str) -> bool:
         # malformed hash in the DB — treat as a failed login, not a 500
         return False
 
-from app.core.config import settings
-
-
-
-
-
 
 def create_access_token(user_id: int, token_type: str = "access") -> str:
     now = datetime.now(timezone.utc)
     payload = {
-        "sub": str(user_id),   # jose requires a string subject
-        "typ": token_type,     # stops an invite token being replayed as a login token
+        "sub": str(user_id),  # jose requires a string subject
+        "typ": token_type,  # stops an invite token being replayed as a login token
         "iat": now,
         "exp": now + timedelta(minutes=settings.access_token_expire_minutes),
     }
@@ -37,8 +34,7 @@ def create_access_token(user_id: int, token_type: str = "access") -> str:
 
 
 def decode_token(token: str, expected_type: str = "access") -> int:
-    """Return the user id encoded in the token, or raise JWTError."""
     payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
     if payload.get("typ") != expected_type:
-        raise JWTError("unexpected token type")
+        raise InvalidTokenError("unexpected token type")
     return int(payload["sub"])
